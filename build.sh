@@ -1,39 +1,45 @@
-#!/bin/sh
+#!/bin/bash
 
-GOPATH=`pwd`
-export GOPATH
-
-GOBIN=$GOPATH/bin
-export GOBIN
+BUILD_DIR=$(pwd)
+export GOPATH=$BUILD_DIR
 
 #
-# Running Test and generate Test Report
+# Clean my build
 #
-if [[ -f $GOPATH/bin/go-junit-report ]]; then
-  echo "Remove binary : $GOPATH/bin/go-junit-report"
-  rm -rf $GOPATH/bin/go-junit-report
+if [[ -f gocd-golang-agent ]]; then
+  echo "Remove binary : gocd-golang-agent"
+  rm -rf gocd-golang-agent
 fi
-echo "Get github.com/jstemmer/go-junit-report"
-go get -u github.com/jstemmer/go-junit-report
 
-if [[ -f testreport.xml ]]; then
-  echo "Remove old test report : testreport.xml"
-  /bin/rm -rf testreport.xml
+#
+# Pull dependencies
+#
+echo "Get dependencies"
+go get golang.org/x/net/websocket
+go get github.com/satori/go.uuid
+go get github.com/xli/assert
+go get github.com/bmatcuk/doublestar
+go get github.com/jstemmer/go-junit-report
+
+#
+# Create my source directory
+#
+mkdir -p src/github.com/gocd-contrib/gocd-golang-agent/
+if ! [[ -L $BUILD_DIR/src/github.com/gocd-contrib/gocd-golang-agent/agent ]]; then
+  ln -s $BUILD_DIR/agent $BUILD_DIR/src/github.com/gocd-contrib/gocd-golang-agent/agent
 fi
-go test -v github.com/barrowkwan/gocd_golang_hello... | $GOPATH/bin/go-junit-report > testreport.xml
-
+if ! [[ -L $BUILD_DIR/src/github.com/gocd-contrib/gocd-golang-agent/junit ]]; then
+  ln -s $BUILD_DIR/junit $BUILD_DIR/src/github.com/gocd-contrib/gocd-golang-agent/junit
+fi
+if ! [[ -L $BUILD_DIR/src/github.com/gocd-contrib/gocd-golang-agent/protocol ]]; then
+  ln -s $BUILD_DIR/protocol $BUILD_DIR/src/github.com/gocd-contrib/gocd-golang-agent/protocol
+fi
+if ! [[ -L $BUILD_DIR/src/github.com/gocd-contrib/gocd-golang-agent/stream ]]; then
+  ln -s $BUILD_DIR/stream $BUILD_DIR/src/github.com/gocd-contrib/gocd-golang-agent/stream
+fi
 
 #
-# Generate the Binary
+# Go Build !!
 #
-echo "======================="
-echo "Building binary for OSX"
-/bin/rm -f $GOPATH/bin/helloworld_osx
-GOOS=darwin go build -o $GOPATH/bin/helloworld_osx github.com/barrowkwan/gocd_golang_hello
-echo "======================="
-
-echo "======================="
-echo "Building binary for linux"
-/bin/rm -f $GOPATH/bin/helloworld_linux
-GOOS=linux go build -o $GOPATH/bin/helloworld_linux github.com/barrowkwan/gocd_golang_hello
-echo "======================="
+echo "Starting building..."
+go build .
